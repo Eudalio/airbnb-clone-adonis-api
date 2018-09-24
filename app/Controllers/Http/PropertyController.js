@@ -1,5 +1,7 @@
 'use strict'
 
+const Property = use('App/Models/Property')
+
 /**
  * Resourceful controller for interacting with properties
  */
@@ -8,7 +10,10 @@ class PropertyController {
    * Show a list of all properties.
    * GET properties
    */
-  async index ({ request, response, view }) {
+  async index () {
+    const properties = Property.all()
+
+    return properties
   }
 
   /**
@@ -22,7 +27,12 @@ class PropertyController {
    * Display a single property.
    * GET properties/:id
    */
-  async show ({ params, request, response, view }) {
+  async show ({ params }) {
+    const property = await Property.findOrFail(params.id)
+
+    await property.load('images')
+
+    return property
   }
 
   /**
@@ -36,7 +46,14 @@ class PropertyController {
    * Delete a property with id.
    * DELETE properties/:id
    */
-  async destroy ({ params, request, response }) {
+  async destroy ({ params, auth, response }) {
+    const property = await Property.findOrFail(params.id)
+
+    if (property.user_id !== auth.user.id) {
+      return response.status(401).send({ error: 'Not authorized' })
+    }
+
+    await property.delete()
   }
 }
 
